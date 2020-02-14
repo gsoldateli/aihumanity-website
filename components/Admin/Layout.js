@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { Header, Icon, Image, Menu, Segment, Sidebar } from "semantic-ui-react";
+import { ToastProvider } from "react-toast-notifications";
 import authService from "../../services/auth";
 const AdminLayout = ({ children }) => {
   const router = useRouter();
   const [sidebarVisible, setSidebarVisible] = useState(false);
   return (
-    <>
+    <ToastProvider autoDismissTimeout={3500}>
       <Sidebar.Pushable as={Segment} style={{ minHeight: "100vh" }}>
         <Sidebar
           as={Menu}
@@ -65,7 +66,7 @@ const AdminLayout = ({ children }) => {
           </Segment>
         </Sidebar.Pusher>
       </Sidebar.Pushable>
-    </>
+    </ToastProvider>
   );
 };
 
