@@ -29,12 +29,13 @@ const AdminLayout = ({ children }) => {
         <Sidebar.Pusher
           dimmed={sidebarVisible}
           onClick={() => sidebarVisible && setSidebarVisible(false)}
+          style={{ minHeight: "100vh" }}
         >
           <Segment basic>
             <Menu>
               <Menu.Item onClick={() => setSidebarVisible(!sidebarVisible)}>
                 {sidebarVisible ? "Fechar" : "Abrir"}
-                {" - "}
+
                 {sidebarVisible ? (
                   <Icon name="ellipsis vertical" />
                 ) : (
@@ -55,14 +56,6 @@ const AdminLayout = ({ children }) => {
               </Menu.Menu>
             </Menu>
             {children}
-            <Header as="h3">Application Content</Header>
-            <Image src="https://react.semantic-ui.com/images/wireframe/paragraph.png" />
-            <br />
-            <Image src="https://react.semantic-ui.com/images/wireframe/paragraph.png" />
-            <br />
-            <Image src="https://react.semantic-ui.com/images/wireframe/paragraph.png" />
-            <br />
-            <Image src="https://react.semantic-ui.com/images/wireframe/paragraph.png" />
           </Segment>
         </Sidebar.Pusher>
       </Sidebar.Pushable>
