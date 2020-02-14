@@ -4,13 +4,10 @@ import { withCookie } from "next-cookie";
 import authService from "../../services/auth";
 
 const redirect = (context, target) => {
-  if (context.res) {
-    // server
-    // 303: "See other"
+  if (context && context.res && context.res.writeHead) {
     context.res.writeHead(303, { Location: target });
     context.res.end();
-  } else {
-    // In the browser, we just pretend like this never even happened ;)
+  } else if (typeof window !== "undefined") {
     Router.replace(target);
   }
 };

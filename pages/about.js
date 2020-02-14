@@ -7,9 +7,4 @@ const About = function About() {
   );
 };
 
-About.getInitialProps = () => {
-  console.log("PROPSABOUT");
-  return { a: 1 };
-};
-
 export default withAuth(About);
