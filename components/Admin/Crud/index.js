@@ -22,7 +22,6 @@ import styled from "styled-components";
 const ACTION_NEW = "new";
 const ACTION_EDIT = "edit";
 const ACTION_LIST = "list";
-const ACTION_EXTRA = "extra";
 
 const getBasePath = router => {
   const { pathname } = router;
@@ -168,7 +167,7 @@ const TableFooter = styled.div`
   align-items: center;
 `;
 
-const CrudListItem = ({ item, deleteAction }) => {
+const CrudListItem = ({ item, deleteAction, renderItem, extraItemActions }) => {
   const redirect = crudRedirect(useRouter());
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
@@ -226,16 +225,22 @@ const CrudListItem = ({ item, deleteAction }) => {
                 </Button>
               </Modal.Actions>
             </Modal>
+            {extraItemActions && extraItemActions(item)}
           </Dropdown.Menu>
         </Dropdown>
       </Table.Cell>
-      <Table.Cell>{item.name}</Table.Cell>
-      <Table.Cell>{item.description}</Table.Cell>
+      {renderItem(item)}
     </Table.Row>
   );
 };
 
-const CrudList = ({ api }) => {
+export const CrudList = ({
+  api,
+  columns,
+  renderItem,
+  extraItemActions,
+  orderByOptions = []
+}) => {
   const { addToast } = useToasts();
   const [page, setPage] = useState(1);
   const [searchText, setSearchText] = useState("");
@@ -325,8 +330,11 @@ const CrudList = ({ api }) => {
           <Table.Header fullWidth>
             <Table.Row>
               <Table.HeaderCell />
-              <Table.HeaderCell>Nome</Table.HeaderCell>
-              <Table.HeaderCell>Descrição</Table.HeaderCell>
+
+              {columns &&
+                columns.map(column => (
+                  <Table.HeaderCell key={column}>{column}</Table.HeaderCell>
+                ))}
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -334,7 +342,9 @@ const CrudList = ({ api }) => {
               <CrudListItem
                 key={item.id}
                 item={item}
+                renderItem={renderItem}
                 deleteAction={deleteAction}
+                extraItemActions={extraItemActions}
               />
             ))}
           </Table.Body>
@@ -366,12 +376,7 @@ const CrudList = ({ api }) => {
                     value: "updated_at",
                     text: "Data Atualização"
                   },
-                  { key: "name", value: "name", text: "Nome" },
-                  {
-                    key: "description",
-                    value: "description",
-                    text: "Descrição"
-                  }
+                  ...orderByOptions
                 ]}
                 defaultValue={orderBy}
                 label="Ordenar por:"
@@ -440,7 +445,14 @@ const CrudList = ({ api }) => {
   );
 };
 
-const Crud = ({ FormComponent, resourceEndpoint }) => {
+const Crud = ({
+  headerIcon = "settings",
+  title = "No title defined",
+  subtitle = "No subtitle defined",
+  FormComponent,
+  ListComponent,
+  resourceEndpoint
+}) => {
   const router = useRouter();
 
   const basePath = getBasePath(router);
@@ -459,6 +471,8 @@ const Crud = ({ FormComponent, resourceEndpoint }) => {
     action = router.query.action || null;
   }
 
+  if (!action) action = ACTION_LIST;
+
   let Component = <h1>List</h1>;
   switch (action) {
     case ACTION_NEW:
@@ -468,7 +482,7 @@ const Crud = ({ FormComponent, resourceEndpoint }) => {
       Component = withUpdate(FormComponent, { api: pageApi, id });
       break;
     default:
-      Component = () => <CrudList api={pageApi} />;
+      Component = () => <ListComponent api={pageApi} />;
   }
 
   return (
@@ -476,12 +490,10 @@ const Crud = ({ FormComponent, resourceEndpoint }) => {
       <Header as="h2" dividing>
         <HeaderWrapper>
           <div>
-            <Icon name="settings" />
+            <Icon name={headerIcon} />
             <Header.Content>
-              Categoria de produtos
-              <Header.Subheader>
-                Gerencie as categorias dos produtos
-              </Header.Subheader>
+              {title}
+              <Header.Subheader>{subtitle}</Header.Subheader>
             </Header.Content>
           </div>
           {action === ACTION_LIST ? (
