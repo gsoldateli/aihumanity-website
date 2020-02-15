@@ -10,9 +10,11 @@ import {
   Button,
   Table,
   Pagination,
-  Accordion,
+  Form,
   Dropdown,
   Modal,
+  Input,
+  Select,
   Placeholder
 } from "semantic-ui-react";
 import styled from "styled-components";
@@ -159,6 +161,13 @@ const HeaderWrapper = styled.div`
   justify-content: space-between;
 `;
 
+const TableFooter = styled.div`
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: space-between;
+  align-items: center;
+`;
+
 const CrudListItem = ({ item, deleteAction }) => {
   const redirect = crudRedirect(useRouter());
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -166,7 +175,7 @@ const CrudListItem = ({ item, deleteAction }) => {
   return (
     <Table.Row>
       <Table.Cell collapsing>
-        <Dropdown text="File">
+        <Dropdown text="Ações">
           <Dropdown.Menu>
             <Dropdown.Item
               text="Editar"
@@ -229,9 +238,14 @@ const CrudListItem = ({ item, deleteAction }) => {
 const CrudList = ({ api }) => {
   const { addToast } = useToasts();
   const [page, setPage] = useState(1);
+  const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [limit, setLimit] = useState("30");
   const [totalPages, setTotalPages] = useState(1);
-  const [filtersActive, setFilterActive] = useState(false);
+  const [totalItems, setTotalItems] = useState(0);
+  const [orderWay, setOrderWay] = useState("desc");
+  const [orderBy, setOrderBy] = useState("updated_at");
+  // const [filtersActive, setFilterActive] = useState(false);
   const [items, setItems] = useState(null);
 
   const deleteAction = async id => {
@@ -250,25 +264,29 @@ const CrudList = ({ api }) => {
     }
   };
 
+  const loadItems = async () => {
+    setLoading(true);
+
+    const { data = null } = await api.list({
+      page,
+      limit,
+      filter: searchText,
+      orderWay,
+      orderBy
+    });
+
+    if (data.data) {
+      setItems(data.data);
+      setTotalPages(data.last_page);
+      setTotalItems(data.total);
+      setPage(Math.min(data.last_page, page));
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const loadItems = async () => {
-      setLoading(true);
-      console.log("lloading true");
-      const { data = null } = await api.list({ page });
-
-      if (data.data && data.data.length > 0) {
-        setItems(data.data);
-        setTotalPages(data.last_page);
-      }
-
-      setTimeout(() => {
-        setLoading(false);
-        console.log("lloading false");
-      }, 1500);
-    };
-
     loadItems();
-  }, [page]);
+  }, [page, orderWay, orderBy, limit]);
 
   let Component;
   if (loading) {
@@ -321,16 +339,69 @@ const CrudList = ({ api }) => {
             ))}
           </Table.Body>
         </Table>
-        <Pagination
-          boundaryRange={0}
-          defaultActivePage={page}
-          siblingRange={1}
-          totalPages={totalPages}
-          onPageChange={(e, { activePage }) => {
-            setPage(activePage);
-            console.log(activePage);
-          }}
-        />
+        <TableFooter>
+          <div>
+            <Pagination
+              boundaryRange={0}
+              defaultActivePage={page}
+              siblingRange={1}
+              totalPages={totalPages}
+              onPageChange={(e, { activePage }) => {
+                setPage(activePage);
+              }}
+              style={{ alignSelf: "center" }}
+            />
+            <strong style={{ display: "inline-block", paddingLeft: "1rem" }}>
+              {totalItems} registros encontrados.
+            </strong>
+          </div>
+          <Form>
+            <Form.Group widths="equal" style={{ marginBottom: "0" }}>
+              <Form.Field
+                control={Select}
+                onChange={(e, data) => setOrderBy(data.value)}
+                options={[
+                  {
+                    key: "updated_at",
+                    value: "updated_at",
+                    text: "Data Atualização"
+                  },
+                  { key: "name", value: "name", text: "Nome" },
+                  {
+                    key: "description",
+                    value: "description",
+                    text: "Descrição"
+                  }
+                ]}
+                defaultValue={orderBy}
+                label="Ordenar por:"
+              />
+              <Form.Field
+                control={Select}
+                onChange={(e, data) => setOrderWay(data.value)}
+                options={[
+                  { key: "asc", value: "asc", text: "ASC." },
+                  { key: "desc", value: "desc", text: "DESC." }
+                ]}
+                defaultValue={orderWay}
+                label="Ordem:"
+              />
+              <Form.Field
+                control={Select}
+                onChange={(e, data) => setLimit(data.value)}
+                options={[
+                  { key: "10", value: "10", text: "10" },
+                  { key: "15", value: "15", text: "15" },
+                  { key: "30", value: "30", text: "30" },
+                  { key: "100", value: "100", text: "100" },
+                  { key: "150", value: "150", text: "150" }
+                ]}
+                defaultValue={limit}
+                label="Quantidade:"
+              />
+            </Form.Group>
+          </Form>
+        </TableFooter>
       </>
     );
   } else {
@@ -345,7 +416,25 @@ const CrudList = ({ api }) => {
   }
   return (
     <>
-      <Accordion fluid styled>
+      <div style={{ maxWidth: "300px" }}>
+        <Input
+          onChange={e => {
+            setSearchText(e.currentTarget.value);
+          }}
+          value={searchText}
+          fluid
+          icon={{
+            name: "search",
+            circular: true,
+            link: true,
+            onClick: () => {
+              loadItems();
+            }
+          }}
+          placeholder="Buscar..."
+        />
+      </div>
+      {/* <Accordion fluid styled>
         <Accordion.Title
           active={filtersActive}
           index={0}
@@ -355,13 +444,9 @@ const CrudList = ({ api }) => {
           Filtros
         </Accordion.Title>
         <Accordion.Content active={filtersActive}>
-          <p>
-            A dog is a type of domesticated animal. Known for its loyalty and
-            faithfulness, it can be found as a welcome guest in many households
-            across the world.
-          </p>
+          
         </Accordion.Content>
-      </Accordion>
+      </Accordion> */}
 
       <Component />
     </>
