@@ -3,10 +3,6 @@ const TOKEN_KEY = "jwt-mao-doce-key";
 
 const authService = (cookie = cookiejs) => ({
   isAuthenticated: () => {
-    console.log({
-      isAuth: cookie.get(TOKEN_KEY),
-      pass: typeof cookie.get(TOKEN_KEY) !== "undefined"
-    });
     return typeof cookie.get(TOKEN_KEY) !== "undefined";
   },
   getToken: () => cookie.get(TOKEN_KEY),
