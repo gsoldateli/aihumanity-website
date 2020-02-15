@@ -9,11 +9,11 @@ import {
   Segment,
   Button,
   Table,
-  Checkbox,
+  Pagination,
   Accordion,
-  Menu,
   Dropdown,
-  Modal
+  Modal,
+  Placeholder
 } from "semantic-ui-react";
 import styled from "styled-components";
 
@@ -73,8 +73,8 @@ const crudApi = routeUri => {
     delete: async id => {
       return await api.delete(`${routeUri}/${id}`);
     },
-    list: async filters => {
-      return await api.get(routeUri, { params: { filters } });
+    list: async params => {
+      return await api.get(routeUri, { params });
     },
     post: api.post,
     get: api.get
@@ -228,6 +228,9 @@ const CrudListItem = ({ item, deleteAction }) => {
 
 const CrudList = ({ api }) => {
   const { addToast } = useToasts();
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
   const [filtersActive, setFilterActive] = useState(false);
   const [items, setItems] = useState(null);
 
@@ -249,18 +252,97 @@ const CrudList = ({ api }) => {
 
   useEffect(() => {
     const loadItems = async () => {
-      const response = await api.list();
+      setLoading(true);
+      console.log("lloading true");
+      const { data = null } = await api.list({ page });
 
-      if (response && response.data) {
-        setItems(response.data);
+      if (data.data && data.data.length > 0) {
+        setItems(data.data);
+        setTotalPages(data.last_page);
       }
+
+      setTimeout(() => {
+        setLoading(false);
+        console.log("lloading false");
+      }, 1500);
     };
 
     loadItems();
-  }, []);
+  }, [page]);
 
-  if (!items) return <h1>Loading List....</h1>;
-
+  let Component;
+  if (loading) {
+    Component = () => (
+      <div style={{ padding: "2rem 0" }}>
+        <Placeholder fluid>
+          <Placeholder.Paragraph>
+            <Placeholder.Line />
+            <Placeholder.Line />
+            <Placeholder.Line />
+            <Placeholder.Line />
+            <Placeholder.Line />
+          </Placeholder.Paragraph>
+          <Placeholder.Paragraph>
+            <Placeholder.Line />
+            <Placeholder.Line />
+            <Placeholder.Line />
+          </Placeholder.Paragraph>
+          <Placeholder.Paragraph>
+            <Placeholder.Line />
+            <Placeholder.Line />
+            <Placeholder.Line />
+          </Placeholder.Paragraph>
+          <Placeholder.Paragraph>
+            <Placeholder.Line />
+            <Placeholder.Line />
+            <Placeholder.Line />
+          </Placeholder.Paragraph>
+        </Placeholder>
+      </div>
+    );
+  } else if (items && items.length > 0) {
+    Component = () => (
+      <>
+        <Table celled compact definition>
+          <Table.Header fullWidth>
+            <Table.Row>
+              <Table.HeaderCell />
+              <Table.HeaderCell>Nome</Table.HeaderCell>
+              <Table.HeaderCell>Descrição</Table.HeaderCell>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
+            {items.map(item => (
+              <CrudListItem
+                key={item.id}
+                item={item}
+                deleteAction={deleteAction}
+              />
+            ))}
+          </Table.Body>
+        </Table>
+        <Pagination
+          boundaryRange={0}
+          defaultActivePage={page}
+          siblingRange={1}
+          totalPages={totalPages}
+          onPageChange={(e, { activePage }) => {
+            setPage(activePage);
+            console.log(activePage);
+          }}
+        />
+      </>
+    );
+  } else {
+    Component = () => (
+      <Segment placeholder>
+        <Header icon>
+          <Icon name="search" />
+          Nenhum registro encontrado.
+        </Header>
+      </Segment>
+    );
+  }
   return (
     <>
       <Accordion fluid styled>
@@ -280,33 +362,8 @@ const CrudList = ({ api }) => {
           </p>
         </Accordion.Content>
       </Accordion>
-      {items && items.length > 0 ? (
-        <Table celled compact definition>
-          <Table.Header fullWidth>
-            <Table.Row>
-              <Table.HeaderCell />
-              <Table.HeaderCell>Nome</Table.HeaderCell>
-              <Table.HeaderCell>Descrição</Table.HeaderCell>
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>
-            {items.map(item => (
-              <CrudListItem
-                key={item.id}
-                item={item}
-                deleteAction={deleteAction}
-              />
-            ))}
-          </Table.Body>
-        </Table>
-      ) : (
-        <Segment placeholder>
-          <Header icon>
-            <Icon name="search" />
-            Nenhum registro encontrado.
-          </Header>
-        </Segment>
-      )}
+
+      <Component />
     </>
   );
 };
