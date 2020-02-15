@@ -245,7 +245,7 @@ const CrudList = ({ api }) => {
   const [totalItems, setTotalItems] = useState(0);
   const [orderWay, setOrderWay] = useState("desc");
   const [orderBy, setOrderBy] = useState("updated_at");
-  // const [filtersActive, setFilterActive] = useState(false);
+
   const [items, setItems] = useState(null);
 
   const deleteAction = async id => {
@@ -434,19 +434,6 @@ const CrudList = ({ api }) => {
           placeholder="Buscar..."
         />
       </div>
-      {/* <Accordion fluid styled>
-        <Accordion.Title
-          active={filtersActive}
-          index={0}
-          onClick={() => setFilterActive(!filtersActive)}
-        >
-          <Icon name="dropdown" />
-          Filtros
-        </Accordion.Title>
-        <Accordion.Content active={filtersActive}>
-          
-        </Accordion.Content>
-      </Accordion> */}
 
       <Component />
     </>
