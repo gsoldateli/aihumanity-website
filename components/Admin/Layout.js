@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
+import Link from "next/link";
 import { Header, Icon, Image, Menu, Segment, Sidebar } from "semantic-ui-react";
 import { ToastProvider } from "react-toast-notifications";
 import authService from "../../services/auth";
@@ -18,12 +19,22 @@ const AdminLayout = ({ children }) => {
           visible={sidebarVisible}
         >
           <Menu.Item as="a" header>
-            File Permissions
+            Módulos
           </Menu.Item>
-          <Menu.Item as="a">Share on Social</Menu.Item>
-          <Menu.Item as="a">Share by E-mail</Menu.Item>
-          <Menu.Item as="a">Edit Permissions</Menu.Item>
-          <Menu.Item as="a">Delete Permanently</Menu.Item>
+          <Link
+            as="a"
+            href="/admin/product-category"
+            as="/admin/product-category"
+          >
+            <Menu.Item as="a">Categorias</Menu.Item>
+          </Link>
+          <Link
+            as="a"
+            href="/admin/product-catalog"
+            as="/admin/product-catalog"
+          >
+            <Menu.Item as="a">Catálogos</Menu.Item>
+          </Link>
         </Sidebar>
 
         <Sidebar.Pusher
