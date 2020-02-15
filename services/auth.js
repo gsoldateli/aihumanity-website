@@ -11,8 +11,8 @@ const authService = (cookie = cookiejs) => ({
   },
   getToken: () => cookie.get(TOKEN_KEY),
   login: token => {
-    // console.log(cookie.get(TOKEN_KEY));
-    cookie.set(TOKEN_KEY, token);
+    const in30Minutes = 1 / 48;
+    cookie.set(TOKEN_KEY, token, { expires: in30Minutes });
   },
   logout: () => {
     cookie.remove(TOKEN_KEY);
