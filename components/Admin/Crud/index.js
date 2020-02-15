@@ -12,7 +12,8 @@ import {
   Checkbox,
   Accordion,
   Menu,
-  Dropdown
+  Dropdown,
+  Modal
 } from "semantic-ui-react";
 import styled from "styled-components";
 
@@ -68,6 +69,9 @@ const crudApi = routeUri => {
     },
     show: async id => {
       return await api.get(`${routeUri}/${id}`);
+    },
+    delete: async id => {
+      return await api.delete(`${routeUri}/${id}`);
     },
     list: async filters => {
       return await api.get(routeUri, { params: { filters } });
@@ -155,10 +159,93 @@ const HeaderWrapper = styled.div`
   justify-content: space-between;
 `;
 
-const CrudList = ({ api }) => {
+const CrudListItem = ({ item, deleteAction }) => {
   const redirect = crudRedirect(useRouter());
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+
+  return (
+    <Table.Row>
+      <Table.Cell collapsing>
+        <Dropdown text="File">
+          <Dropdown.Menu>
+            <Dropdown.Item
+              text="Editar"
+              onClick={() =>
+                redirect({ action: ACTION_EDIT, id: item.id }, [
+                  ACTION_EDIT,
+                  item.id
+                ])
+              }
+            />
+            <Modal
+              open={deleteModalOpen}
+              trigger={
+                <Dropdown.Item
+                  onClick={() => setDeleteModalOpen(true)}
+                  text="Remover"
+                />
+              }
+              basic
+              size="small"
+              dimmer="blurring"
+            >
+              <Header
+                icon="warning sign"
+                content="Deseja mesmo remover este registro?"
+              />
+              <Modal.Content>
+                <p>Uma vez removido, não poderá ser recuperado novamente.</p>
+              </Modal.Content>
+              <Modal.Actions>
+                <Button
+                  onClick={() => setDeleteModalOpen(false)}
+                  basic
+                  color="red"
+                  inverted
+                >
+                  <Icon name="remove" key="done" /> Não quero
+                </Button>
+                <Button
+                  color="green"
+                  inverted
+                  onClick={async () => {
+                    await deleteAction(item.id);
+                    setDeleteModalOpen(false);
+                  }}
+                >
+                  <Icon name="checkmark" /> Sim, quero.
+                </Button>
+              </Modal.Actions>
+            </Modal>
+          </Dropdown.Menu>
+        </Dropdown>
+      </Table.Cell>
+      <Table.Cell>{item.name}</Table.Cell>
+      <Table.Cell>{item.description}</Table.Cell>
+    </Table.Row>
+  );
+};
+
+const CrudList = ({ api }) => {
+  const { addToast } = useToasts();
   const [filtersActive, setFilterActive] = useState(false);
   const [items, setItems] = useState(null);
+
+  const deleteAction = async id => {
+    try {
+      const response = await api.delete(id);
+
+      setItems(items.filter(item => item.id !== id));
+      addToast(response.data.message, {
+        appearance: "success",
+        autoDismiss: true
+      });
+    } catch ({ response: { data } }) {
+      addToast(data.message, {
+        appearance: "error"
+      });
+    }
+  };
 
   useEffect(() => {
     const loadItems = async () => {
@@ -193,47 +280,33 @@ const CrudList = ({ api }) => {
           </p>
         </Accordion.Content>
       </Accordion>
-      <Table celled compact definition>
-        <Table.Header fullWidth>
-          <Table.Row>
-            <Table.HeaderCell />
-            <Table.HeaderCell>Nome</Table.HeaderCell>
-            <Table.HeaderCell>Descrição</Table.HeaderCell>
-          </Table.Row>
-        </Table.Header>
-        <Table.Body>
-          {items &&
-            items.length > 0 &&
-            items.map(item => (
-              <Table.Row>
-                <Table.Cell collapsing>
-                  <Menu compact>
-                    <Dropdown
-                      text="Ações"
-                      options={[
-                        {
-                          key: 1,
-                          text: "Editar",
-                          value: 1,
-                          onClick: () =>
-                            redirect({ action: ACTION_EDIT, id: item.id }, [
-                              ACTION_EDIT,
-                              item.id
-                            ])
-                        },
-                        { key: 2, text: "Deletar", value: 2 }
-                      ]}
-                      simple
-                      item
-                    />
-                  </Menu>
-                </Table.Cell>
-                <Table.Cell>{item.name}</Table.Cell>
-                <Table.Cell>{item.description}</Table.Cell>
-              </Table.Row>
+      {items && items.length > 0 ? (
+        <Table celled compact definition>
+          <Table.Header fullWidth>
+            <Table.Row>
+              <Table.HeaderCell />
+              <Table.HeaderCell>Nome</Table.HeaderCell>
+              <Table.HeaderCell>Descrição</Table.HeaderCell>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
+            {items.map(item => (
+              <CrudListItem
+                key={item.id}
+                item={item}
+                deleteAction={deleteAction}
+              />
             ))}
-        </Table.Body>
-      </Table>
+          </Table.Body>
+        </Table>
+      ) : (
+        <Segment placeholder>
+          <Header icon>
+            <Icon name="search" />
+            Nenhum registro encontrado.
+          </Header>
+        </Segment>
+      )}
     </>
   );
 };
@@ -247,10 +320,12 @@ const Crud = ({ FormComponent, resourceEndpoint }) => {
   let action;
   let id;
 
+  // if params come from server side
   if (router.query.params) {
     action = router.query.params[0];
     id = router.query.params[1];
   } else {
+    // params come from client side
     id = router.query.id || null;
     action = router.query.action || null;
   }
@@ -280,15 +355,27 @@ const Crud = ({ FormComponent, resourceEndpoint }) => {
               </Header.Subheader>
             </Header.Content>
           </div>
-          <Link
-            href={`${basePath}?action=${ACTION_NEW}`}
-            as={`${basePath}/${ACTION_NEW}`}
-          >
-            <Button primary style={{ alignSelf: "center" }}>
-              <Icon name="add" />
-              Adicionar
-            </Button>
-          </Link>
+          {action === ACTION_LIST ? (
+            <Link
+              href={`${basePath}?action=${ACTION_NEW}`}
+              as={`${basePath}/${ACTION_NEW}`}
+            >
+              <Button positive style={{ alignSelf: "center" }}>
+                <Icon name="add" />
+                Adicionar
+              </Button>
+            </Link>
+          ) : (
+            <Link
+              href={`${basePath}?action=${ACTION_LIST}`}
+              as={`${basePath}/${ACTION_LIST}`}
+            >
+              <Button primary style={{ alignSelf: "center" }}>
+                <Icon name="undo" />
+                Voltar
+              </Button>
+            </Link>
+          )}
         </HeaderWrapper>
       </Header>
       <Component />

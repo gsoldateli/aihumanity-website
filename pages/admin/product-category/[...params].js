@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { Form, Button, Checkbox, Input, TextArea } from "semantic-ui-react";
+import { Form, Button, Input, TextArea } from "semantic-ui-react";
 import AdminLayout from "../../../components/Admin/Layout";
 import Crud from "../../../components/Admin/Crud";
+import withAuth from "../../../components/Admin/withAuth";
 
 const ProductCategoryForm = props => {
   const {
@@ -39,7 +40,11 @@ const ProductCategoryForm = props => {
         }
         label="Nome da categoria"
       >
-        <input ref={register} name="name" placeholder="Nome da categoria" />
+        <input
+          ref={register({ required: "Campo nome é obrigatório." })}
+          name="name"
+          placeholder="Nome da categoria"
+        />
       </Form.Field>
       <Form.Field>
         <label>Descrição da categoria</label>
@@ -63,4 +68,4 @@ const ProductCategoryCrud = () => {
   );
 };
 
-export default ProductCategoryCrud;
+export default withAuth(ProductCategoryCrud);
